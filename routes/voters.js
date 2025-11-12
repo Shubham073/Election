@@ -41,6 +41,27 @@ router.patch('/:id', getVoter, async (req, res) => {
   }
 });
 
+
+// Search for voters by name
+router.get('/search/:name', async (req, res) => {
+  const { name } = req.params;
+  const { page = 1, limit = 10 } = req.query;
+  try {
+    const voters = await Voter.find({ "Name": { $regex: name, $options: 'i' } })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+    const count = await Voter.countDocuments({ "Name": { $regex: name, $options: 'i' } });
+    res.json({
+      voters,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 async function getVoter(req, res, next) {
   let voter;
   try {
